@@ -1,0 +1,69 @@
+URY Player for Java
+===================
+
+This project seeks to create a Java application and applet, based 
+on the same basecode, that allows streaming from the University Radio 
+York MP3 streaming service.
+
+The application spin has been tested as working on OpenJDK/GNU/Linux; 
+the applet is currently suffering from issues (likely applet security) 
+that preclude working under OpenJDK, though an earlier build ran 
+successfully on Oracle's JRE.
+
+Features include:
+
+- Quality selection (high, low, mobile)
+- Webcam fetcher (can be disabled)
+- Minimalist Swing user interface
+
+
+You will need:
+--------------
+
+The following libraries need to be in classpath (or /lib in eclipse, 
+etc) but are not distributed in the github:
+
+- tritonus_share.jar
+- jl1.0.1.jar
+- mp3spi1.9.5.jar
+
+Later versions might also work.
+
+The Eclipse project files are included in this repository.
+
+
+Usage
+-----
+
+The URYPlayer class in uryPlayer.standalone contains the entry point for 
+the standalone application version of the URY Player for Java.
+
+The URYApplet class in uryPlayer.applet contains the entry point for the 
+applet version - note that the applet does not provide a user interface, 
+as it is expected that a JavaScript control set will eventually be 
+provided to interact with it.
+
+
+Licence
+-------
+
+See COPYING.
+
+
+Known Issues
+------------
+
+- Very much tied into the URY system - future versions may be more 
+  generalised.
+
+- URYApplet does not work in OpenJDK, seemingly.  URYPlayer does.
+
+- No "get current broadcast details" feature - this is expected to be 
+  implemented later after a push service is added.
+
+
+Credits
+-------
+
+Coded mainly by Matt Windsor of URY Computing, based muchly on example 
+code. =P
