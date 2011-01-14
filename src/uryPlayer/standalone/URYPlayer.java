@@ -19,6 +19,7 @@
 
 package uryPlayer.standalone;
 
+import uryPlayer.core.AbstractStreamPlayer;
 import uryPlayer.core.PlayerCore;
 import uryPlayer.core.URYStreamPlayer;
 
@@ -30,7 +31,7 @@ import uryPlayer.core.URYStreamPlayer;
  *
  */
 
-public class URYPlayer implements URYStreamPlayer
+public class URYPlayer extends AbstractStreamPlayer implements URYStreamPlayer
 {
   boolean running;
   PlayerCore player;
@@ -69,59 +70,5 @@ public class URYPlayer implements URYStreamPlayer
     player = new PlayerCore (PlayerCore.HIGH_STREAM);
     ui = new UserInterface (this);
     ui.createUserInterface ();
-  }
-
-  
-  /**
-   * Start the attached player, if it is running.
-   */
-  
-  public void
-  startPlayer ()
-  {
-    if (player != null)
-      player.start ();
-  }
-  
-  
-  /**
-   * Stop the attached player, if it is running.
-   */
-  
-  public void
-  stopPlayer ()
-  {
-    if (player != null)
-      player.stop ();
-  }
-  
-  
-  /**
-   * Get whether or not the PlayerCore should be running.
-   * 
-   * @return  true if the player is expected to be running, false otherwise.
-   */
-  
-  public boolean 
-  isRunning ()
-  {
-    if (player != null)
-      return player.isRunning ();
-    else
-      return false;
-  }
-
-  
-  /**
-   * Change the URL of the stream the player is streaming from.
-   * 
-   * @param newURL  The new stream URL.
-   */
-    
-  public void
-  changePlayerURL (String newURL)
-  {
-    if (player != null)
-      player.changeURL (newURL);
   }
 }

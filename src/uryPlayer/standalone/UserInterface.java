@@ -24,8 +24,11 @@ import java.awt.event.*;
 
 import javax.swing.*;
 import javax.swing.border.Border;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 import java.util.Enumeration;
+import java.util.Hashtable;
 
 import uryPlayer.core.PlayerCore;
 import uryPlayer.core.URYStreamPlayer;
@@ -57,6 +60,8 @@ public class UserInterface
   "along with this program.  If not, see <a href=http://www.gnu.org/licenses/>http://www.gnu.org/licences/</a>.<br>" +
   "</html>";
   
+  private static final int VOLUME_MULTIPLIER = 1000; /* Multiplier to map from volume float to volume slider int.*/
+  
   private URYStreamPlayer parent;
   
   private JFrame frame;
@@ -68,6 +73,8 @@ public class UserInterface
   
   private ButtonGroup qualityButtons;
   private JPanel qualityPanel;
+  
+  private JSlider volumeSlider;
   
   private WebcamFetcher webcam;
   private JLabel webcamImage;
@@ -101,6 +108,7 @@ public class UserInterface
     
     createWebcamView ();
     createQualitySelectors ();
+    createVolumeControl ();
     createControlButtons ();
 
     frame.pack ();
@@ -139,21 +147,32 @@ public class UserInterface
     "Quality");
     
     qualityButtons = new ButtonGroup ();
-    qualityPanel = new JPanel(new GridLayout(3, 1));
+    qualityPanel = new JPanel (new GridLayout(3, 1));
     qualityPanel.setBorder (BorderFactory.createCompoundBorder (BorderFactory.createEmptyBorder (0, 10, 10, 10), 
         titledBorder));
     
-    createQualitySelector ("High Quality (192KB/s)", PlayerCore.HIGH_STREAM, true);
-    createQualitySelector ("Low Quality (96KB/s)", PlayerCore.LOW_STREAM, false);
-    createQualitySelector ("Mobile Quality (48KB/s)", PlayerCore.MOBILE_STREAM, false);
+    createQualitySelector ("High Quality (192KB/s)", KeyEvent.VK_H, PlayerCore.HIGH_STREAM, true);
+    createQualitySelector ("Low Quality (96KB/s)", KeyEvent.VK_L, PlayerCore.LOW_STREAM, false);
+    createQualitySelector ("Mobile Quality (48KB/s)", KeyEvent.VK_M, PlayerCore.MOBILE_STREAM, false);
     
-    frame.getContentPane ().add (qualityPanel, BorderLayout.LINE_START);
+    frame.getContentPane ().add (qualityPanel);
   }
   
+  
+  /**
+   * Create a quality selector.
+   * 
+   * @param label       The string to assign to the selector label.
+   * @param mnemonic    The mnemonic to assign to the selector label.
+   * @param streamURI   The stream that the selector will connect to.
+   * @param isSelected  Whether or not the selector should begin selected.
+   */
+  
   private void
-  createQualitySelector (String label, final String streamURI, boolean isSelected)
+  createQualitySelector (String label, int mnemonic, final String streamURI, boolean isSelected)
   {
     JRadioButton qualityButton = new JRadioButton (label);
+    qualityButton.setMnemonic (mnemonic);
     qualityButton.setSelected (isSelected);
     qualityButton.addActionListener (new ActionListener ()
     {
@@ -161,12 +180,56 @@ public class UserInterface
       public void
       actionPerformed (ActionEvent event)
       {
-        parent.changePlayerURL (streamURI);
+        parent.setStream (streamURI);
       }
     });
   
     qualityButtons.add (qualityButton);
     qualityPanel.add (qualityButton);
+  }
+  
+  
+  /**
+   * Create the volume slider.
+   */
+  
+  private void
+  createVolumeControl ()
+  {
+    Border titledBorder = BorderFactory.createTitledBorder (BorderFactory.createEtchedBorder (),
+    "Volume");
+    
+    volumeSlider = new JSlider (JSlider.HORIZONTAL, 0, VOLUME_MULTIPLIER, VOLUME_MULTIPLIER);
+    volumeSlider.setBorder (BorderFactory.createCompoundBorder (BorderFactory.createEmptyBorder (0, 10, 10, 10), 
+        titledBorder));
+   
+    
+    // Make labels for the ends.
+    
+    Hashtable<Integer, JLabel> labelTable = new Hashtable<Integer, JLabel> ();
+    
+    labelTable.put (new Integer(0), new JLabel("0%"));
+    labelTable.put (new Integer(VOLUME_MULTIPLIER), new JLabel("100%"));
+    
+    volumeSlider.setLabelTable (labelTable);
+    volumeSlider.setPaintLabels (true);
+    
+    
+    // Change listener.
+    
+    volumeSlider.addChangeListener (new ChangeListener ()
+    {
+
+      @Override
+      public void
+      stateChanged (ChangeEvent e)
+      {
+        parent.setVolume (Integer.valueOf (volumeSlider.getValue ()).floatValue () / VOLUME_MULTIPLIER);
+      }
+      
+    });
+    
+    frame.getContentPane ().add (volumeSlider);
   }
   
   

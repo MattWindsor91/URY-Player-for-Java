@@ -24,6 +24,7 @@ import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.DataLine;
+import javax.sound.sampled.FloatControl;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.SourceDataLine;
 import javax.sound.sampled.UnsupportedAudioFileException;
@@ -71,14 +72,15 @@ public class PlayerCore implements Runnable
   
   public static final String MOBILE_STREAM = PREFIX + "live-mobile";
 
+
   private String streamURL;
   private volatile Thread thread;
+  private volatile float volume;
   
   
   /**
    *  Create a new PlayerCore.
    *  
-   *  @param inParent  The URYApplet controlling this PlayerCore.
    *  @param inURL     The stream URL to connect to.
    */
   
@@ -89,47 +91,57 @@ public class PlayerCore implements Runnable
     
     streamURL = inURL;
     thread = null;
+    volume = 1;
   }
 
   
   /**
    * Start the PlayerCore, if it has not already been started.
+   * 
+   * @return true if the operation succeeded, false otherwise.
    */
   
-  public void
+  public boolean
   start ()
   {
-    if (thread == null)
-      {      
-        thread = new Thread (this);
-        thread.start ();
-      }
+    if (thread != null)
+      return false;
+    
+    thread = new Thread (this);
+    thread.start ();
+   
+    return true;
   }
   
   
   /**
    * Stop the PlayerCore, if it has been started.
+   * 
+   * @return true if the operation succeeded, false otherwise.
    */
   
-  public void
+  public boolean
   stop ()
   {
-    if (thread != null)
-      { 
-        Thread temp = thread;
-        thread = null;
-        temp.interrupt ();
+    if (thread == null)
+      return false;
+    
+    Thread temp = thread;
+    thread = null;
+    temp.interrupt ();
         
-        try
-          {
-            temp.join ();
-          }
-        catch (InterruptedException e)
-          {
-            // TODO Auto-generated catch block
-            e.printStackTrace ();
-          }
+    try
+      {
+        temp.join ();
       }
+    catch (InterruptedException e)
+      {
+        // TODO Auto-generated catch block
+        e.printStackTrace ();
+        return false;
+      }
+    
+    return true;
   }
   
   /**
@@ -142,26 +154,64 @@ public class PlayerCore implements Runnable
     streamPlay (streamURL);
   }
 
+  
+  /**
+   * @return  the current stream URL.
+   */
+  
+  public String
+  getURL ()
+  {
+    return streamURL;
+  }
+ 
+  
   /**
    * Changes the URL used by the PlayerCore.
    * 
-   * This may only be done when the PlayerCore is not running.
+   * This will stop the current player if running.
    * 
    * @return  true if the URL was changed, false otherwise.
    */
   
   public boolean
-  changeURL (String newURL)
+  setURL (String streamURL)
   {
     if (thread == null)
-      {
-        streamURL = newURL;
-        return true;
-      }
-    else
-      return false;
+      stop ();
+      
+    this.streamURL = streamURL;
+    return true;
   }
   
+  
+  /**
+   * Set the volume of the stream, if it is playing.
+   * 
+   * @param volume The new volume, as a floating-point number from 0 to 1.
+   * 
+   * @return true if the operation succeeded, false otherwise.
+   */
+  
+  public boolean
+  setVolume (float volume)
+  {
+    this.volume = volume;
+    return true;
+  }
+
+
+  /**
+   * @return the current volume, as a floating-point number from 0 to 1.
+   */
+  
+  public float
+  getVolume ()
+  {
+    return volume;
+  }
+
+
   /**
    * Play from a stream until the stream terminates or the PlayerCore is 
    * instructed to stop.
@@ -247,11 +297,13 @@ public class PlayerCore implements Runnable
     Thread thisThread = Thread.currentThread ();
     
     byte[] data = new byte[4096];
-    
+
     SourceDataLine line = getLine (targetFormat);
+    float previous_volume = 2;
     
     if (line != null)
       {
+        line.open ();
         line.start ();
         int nBytesRead = 0;
         
@@ -259,6 +311,12 @@ public class PlayerCore implements Runnable
         
         while (nBytesRead != -1 && thread == thisThread)
           {
+            if (previous_volume != getVolume ())
+              {
+                previous_volume = getVolume ();
+                updateVolume (line);
+              }
+            
             nBytesRead = din.read (data, 0, data.length);
             
             if (nBytesRead != -1)
@@ -274,6 +332,34 @@ public class PlayerCore implements Runnable
       }
   }
 
+  
+  /**
+   * Update the volume of the player core.
+   * 
+   * @param line  The line to change volume on.
+   */
+  
+  private void
+  updateVolume (SourceDataLine line)
+  {
+    FloatControl volCtrl = null;
+    
+    if (line.isControlSupported (FloatControl.Type.VOLUME))
+      {
+        volCtrl = (FloatControl) line.getControl (FloatControl.Type.VOLUME);
+        volCtrl.setValue (getVolume ());
+      }
+    else
+      {
+        volCtrl = (FloatControl) line.getControl (FloatControl.Type.MASTER_GAIN);
+        
+        // Linear volume = 10 ^ (Gain (dB) / 20)
+        
+        volCtrl.setValue ((float) (Math.log10 (getVolume ())) * 20);
+      }
+    System.out.println (volCtrl.getValue ());
+  }
+  
   
   /**
    * Get a data line from the sound system on which to play the stream.

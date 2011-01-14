@@ -34,6 +34,7 @@ public interface URYStreamPlayer
 {
   /**
    * Get whether or not the PlayerCore should be running.
+   * 
    * @return  true if the player is expected to be running, false otherwise.
    */
   
@@ -43,25 +44,62 @@ public interface URYStreamPlayer
   
   /**
    * Start the attached player, if it is running.
+   * 
+   * @return true if the operation succeeded, false otherwise.
    */
   
-  public void
+  public boolean
   startPlayer ();
   
   
   /**
    * Stop the attached player, if it is running.
+   * 
+   * @return true if the operation succeeded, false otherwise.
    */
   
-  public void
+  public boolean
   stopPlayer ();
 
 
   /**
-   * Change the URL of the stream the player is streaming from.
-   * @param newURL  The new stream URL.
+   * @return  The volume of the stream, expressed as a floating
+   *          point number in single precision from 0 to 1.
    */
   
-  public void 
-  changePlayerURL (String newURL);
+  public float
+  getVolume ();
+  
+  
+  /**
+   * Change the volume of the stream.
+   * 
+   * @param volume  The new volume of the stream, expressed as a 
+   *                floating-point number in single precision from 
+   *                0 to 1.
+   *                
+   * @return true if the operation succeeded, false otherwise.
+   */
+  
+  public boolean
+  setVolume (float volume);
+  
+  
+  /**
+   * @return  the current stream URL, or null if the player is 
+   *          null.
+   */
+  
+  public String
+  getStream ();
+  
+
+  /**
+   * Change the URL of the stream the player is streaming from.
+   * 
+   * @param streamURL  The new stream URL.
+   */
+  
+  public boolean
+  setStream (String streamURL);
 }

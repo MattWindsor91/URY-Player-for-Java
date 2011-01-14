@@ -65,43 +65,45 @@ public class URYApplet extends Applet implements URYStreamPlayer
   public void
   init ()
   {
-    startPlayer ();
   }
   
   
-  /**
-   * Applet stop function.
-   */
-  
-  public void
-  stop ()
-  {
-    stopPlayer ();
-  }
-
-
   /**
    * Start the attached player, if it is running.
    */
   
-  public void
+  @Override
+  public boolean
   startPlayer ()
   {
-    if (player != null)
-      player.start ();
+    if (player == null)
+      return false;
+    else
+      {
+        player.start ();
+        return true;
+      }
   }
-  
+ 
   
   /**
    * Stop the attached player, if it is running.
+   * 
+   * Also the applet stop function.
    */
   
-  public void
+  @Override
+  public boolean
   stopPlayer ()
   {
-    if (player != null)
-      player.stop ();
-  }
+    if (player == null)
+      return false;
+    else
+      {
+        player.stop ();
+        return true;
+      }
+  } 
   
   
   /**
@@ -109,6 +111,7 @@ public class URYApplet extends Applet implements URYStreamPlayer
    * @return  true if the player is expected to be running, false otherwise.
    */
   
+  @Override
   public boolean 
   isRunning ()
   {
@@ -120,14 +123,54 @@ public class URYApplet extends Applet implements URYStreamPlayer
 
 
   /**
+   * @return  the current stream URL, or null if the player is 
+   *          null.
+   */
+  
+  public String
+  getStream ()
+  {
+    if (player != null)
+      return player.getURL ();
+    else
+      return null;
+  }
+  
+  /**
    * Change the URL of the stream the player is streaming from.
    * @param newURL  The new stream URL.
    */
     
-  public void
-  changePlayerURL (String newURL)
+  public boolean
+  setStream (String newURL)
   {
     if (player != null)
-      player.changeURL (newURL);
+      return player.setURL (newURL);
+    else
+      return false;
+  }
+
+
+  /**
+   * @see uryPlayer.core.URYStreamPlayer#getVolume()
+   */
+  
+  @Override
+  public float
+  getVolume ()
+  {
+    return player.getVolume ();
+  }
+
+  
+  /**
+   * @see uryPlayer.core.URYStreamPlayer#setVolume(double)
+   */  
+
+  @Override
+  public boolean
+  setVolume (float volume)
+  {
+    return player.setVolume (volume);
   }
 }
