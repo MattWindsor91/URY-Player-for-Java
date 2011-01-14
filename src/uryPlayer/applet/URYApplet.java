@@ -34,7 +34,7 @@ import uryPlayer.core.URYStreamPlayer;
  *
  */
 
-public class URYApplet extends Applet implements URYStreamPlayer
+public class URYApplet extends Applet implements URYStreamPlayer, Runnable
 { 
   /**
    * Version string of some sort.
@@ -42,7 +42,11 @@ public class URYApplet extends Applet implements URYStreamPlayer
   
   private static final long serialVersionUID = -3710033878028709433L;
 
-  PlayerCore player;
+  private volatile PlayerCore player;
+  private volatile boolean isPlaying;
+  private volatile boolean stateChanged;
+  private volatile Thread thread;
+  
   
   
   /**
@@ -55,16 +59,98 @@ public class URYApplet extends Applet implements URYStreamPlayer
   URYApplet () throws HeadlessException
   {
     player = new PlayerCore (PlayerCore.HIGH_STREAM);
+    isPlaying = false;
+    stateChanged = false;
+    thread = null;
   }
 
   
   /**
-   * Applet start function.
+   * Applet init function.
    */
   
   public void
   init ()
   {
+  }
+  
+  
+  /**
+   * Applet start function.
+   * 
+   * The main body of the applet is executed as a separate thread, 
+   * to allow the applet to start and stop the player in signed mode 
+   * while listening for commands in unsigned mode.
+   */
+  
+  public void
+  start ()
+  {
+    thread = new Thread (this);
+    thread.start ();
+  }
+  
+  
+  /**
+   * Applet stop function.
+   */
+  
+  public void
+  stop ()
+  {
+    Thread temp = thread;
+    thread = null;
+    temp.interrupt ();
+        
+    try
+      {
+        temp.join ();
+      }
+    catch (InterruptedException e)
+      {
+        // Do nothing
+      }
+  }
+  
+  
+  /**
+   * Applet main body.
+   * 
+   * Due to the Java security model, all code interfacing with the sound 
+   * API (eg player starts and stops) has to run separately from the 
+   * JavaScript controls, so the applet start/stop functionality is 
+   * implemented as a state machine of sorts with the JavaScript-exposed
+   * functions changing the state.
+   */
+  
+  public void
+  run ()
+  {
+    Thread thisThread = Thread.currentThread ();
+    
+    // Run until thread becomes null/changes.
+    
+    while (thread == thisThread)
+      {
+        if (stateChanged == true)
+          {
+            stateChanged = false;
+            
+            if (isPlaying == true)
+              player.start ();
+            else
+              player.stop ();
+          }
+        
+        try
+          {
+            Thread.sleep (10);
+          }
+        catch (InterruptedException e)
+          {
+            // Do nothing.
+          }
+      }
   }
   
   
@@ -80,7 +166,8 @@ public class URYApplet extends Applet implements URYStreamPlayer
       return false;
     else
       {
-        player.start ();
+        isPlaying = true;
+        stateChanged = true;
         return true;
       }
   }
@@ -100,7 +187,8 @@ public class URYApplet extends Applet implements URYStreamPlayer
       return false;
     else
       {
-        player.stop ();
+        isPlaying = false;
+        stateChanged = true;
         return true;
       }
   } 
